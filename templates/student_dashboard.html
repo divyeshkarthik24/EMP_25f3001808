@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Student Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('student_dashboard') }}" class="list-group-item list-group-item-action active">My Dashboard</a>
+            <a href="#" class="list-group-item list-group-item-action">Search Examinations</a>
+            <a href="#" class="list-group-item list-group-item-action">My Bookings</a>
+            <a href="#" class="list-group-item list-group-item-action">View Results</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Student Main Area -->
+    <div class="col-md-9">
+        <h4>Student Dashboard</h4>
+        <hr>
+        <p>Welcome to your portal. Keep track of your examination schedules and results here.</p>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-secondary text-white">
+                Upcoming Examinations
+            </div>
+            <div class="card-body text-center text-muted">
+                <p>No examinations have been scheduled by the Admin yet.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

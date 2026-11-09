@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="#" class="list-group-item list-group-item-action active">Dashboard Home</a>
+            <a href="#" class="list-group-item list-group-item-action">Manage Courses</a>
+            <a href="#" class="list-group-item list-group-item-action">Manage Exams</a>
+            <a href="#" class="list-group-item list-group-item-action">Approve Examiners</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Admin Statistics Area -->
+    <div class="col-md-9">
+        <h4>Admin Dashboard</h4>
+        <hr>
+        <p>Welcome, Admin! Here is the system overview.</p>
+        
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="card text-center bg-light">
+                    <div class="card-body">
+                        <h5>Courses</h5>
+                        <h2>{{ course_count }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-center bg-light">
+                    <div class="card-body">
+                        <h5>Examinations</h5>
+                        <h2>{{ exam_count }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-center bg-light">
+                    <div class="card-body">
+                        <h5>Students</h5>
+                        <h2>{{ student_count }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-center bg-light">
+                    <div class="card-body">
+                        <h5>Examiners</h5>
+                        <h2>{{ examiner_count }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-center bg-light">
+                    <div class="card-body">
+                        <h5>Exam Slots</h5>
+                        <h2>{{ slot_count }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="card text-center bg-light">
+                    <div class="card-body">
+                        <h5>Total Bookings</h5>
+                        <h2>{{ booking_count }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

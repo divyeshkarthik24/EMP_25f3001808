@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -97,6 +98,27 @@ with app.app_context():
         db.session.add(default_admin)
         db.session.commit()
         print("Pre-existing Admin user created successfully.")
+
+# --- ROLE-BASED ACCESS CONTROL DECORATOR ---
+def login_required(role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorated_view(*args, **kwargs):
+            if 'user_id' not in session:
+                flash("Please log in to access this page.")
+                return redirect(url_for('login'))
+            if session.get('role') != role:
+                flash("Access denied. You do not have the required permissions.")
+                # Send them back to their own dashboard
+                if session.get('role') == 'student':
+                    return redirect(url_for('student_dashboard'))
+                elif session.get('role') == 'examiner':
+                    return redirect(url_for('examiner_dashboard'))
+                return redirect(url_for('login'))
+            return fn(*args, **kwargs)
+        return decorated_view
+    return wrapper
+
 # --- AUTHENTICATION ROUTES ---
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -171,21 +193,68 @@ def logout():
 
 # Placeholder routes for dashboards to prevent crash on successful login
 @app.route('/admin_dashboard')
+@login_required(role='admin')
 def admin_dashboard():
-    return "Admin Dashboard - Under Construction"
-
-@app.route('/examiner_dashboard')
-def examiner_dashboard():
-    return "Examiner Dashboard - Under Construction"
+    # Fetching all required statistics for the admin dashboard
+    course_count = Course.query.count()
+    exam_count = Examination.query.count()
+    student_count = User.query.filter_by(role='student').count()
+    examiner_count = User.query.filter_by(role='examiner').count()
+    slot_count = ExaminationSlot.query.count()
+    booking_count = Booking.query.count()
+    
+    return render_template('admin_dashboard.html', 
+                           course_count=course_count,
+                           exam_count=exam_count,
+                           student_count=student_count,
+                           examiner_count=examiner_count,
+                           slot_count=slot_count,
+                           booking_count=booking_count)
 
 @app.route('/student_dashboard')
+@login_required(role='student')
 def student_dashboard():
-    return "Student Dashboard - Under Construction"
+    # We will query actual available exams and bookings here in the next phase
+    return render_template('student_dashboard.html')
+
+@app.route('/examiner_dashboard')
+@login_required(role='examiner')
+def examiner_dashboard():
+    # We will query assigned exams and slots here later
+    return render_template('examiner_dashboard.html')
+# --- ROLE-BASED ACCESS CONTROL DECORATOR ---
+def login_required(role):
+    def wrapper(fn):
+        @wraps(fn)
+        def decorated_view(*args, **kwargs):
+            if 'user_id' not in session:
+                flash("Please log in to access this page.")
+                return redirect(url_for('login'))
+            if session.get('role') != role:
+                flash("Access denied. You do not have the required permissions.")
+                # Send them back to their own dashboard
+                if session.get('role') == 'student':
+                    return redirect(url_for('student_dashboard'))
+                elif session.get('role') == 'examiner':
+                    return redirect(url_for('examiner_dashboard'))
+                return redirect(url_for('login'))
+            return fn(*args, **kwargs)
+        return decorated_view
+    return wrapper
 # Home route
 @app.route('/')
 def home():
-    return "Examination Management Portal - Complete Database Active"
-
+    # If the user is already logged in, send them to their specific dashboard
+    if 'user_id' in session:
+        if session.get('role') == 'admin':
+            return redirect(url_for('admin_dashboard'))
+        elif session.get('role') == 'examiner':
+            return redirect(url_for('examiner_dashboard'))
+        elif session.get('role') == 'student':
+            return redirect(url_for('student_dashboard'))
+            
+    # Otherwise, send them to the login page
+    return redirect(url_for('login'))
 # Run app
 if __name__ == '__main__':
     app.run(debug=True)
