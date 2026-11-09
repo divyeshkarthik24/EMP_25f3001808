@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
-from flask import Flask
+from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
-
+from werkzeug.security import generate_password_hash, check_password_hash
 # App init
 app = Flask(__name__)
 
@@ -97,7 +97,90 @@ with app.app_context():
         db.session.add(default_admin)
         db.session.commit()
         print("Pre-existing Admin user created successfully.")
+# --- AUTHENTICATION ROUTES ---
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']
+        
+        # Enforce constraint: Admin cannot be registered via the portal
+        if role == 'admin':
+            flash("Admin registration is not permitted.")
+            return redirect(url_for('register'))
+            
+        # Check if user already exists
+        if User.query.filter_by(username=username).first():
+            flash("Username already exists. Please choose another.")
+            return redirect(url_for('register'))
+            
+        # Hash password and create user
+        hashed_password = generate_password_hash(password)
+        
+        # Examiners require admin approval, so default status is 'pending'
+        # Students are automatically 'approved'
+        status = 'pending' if role == 'examiner' else 'approved'
+        
+        new_user = User(username=username, password=hashed_password, role=role, status=status)
+        db.session.add(new_user)
+        db.session.commit()
+        
+        flash("Registration successful! Please log in.")
+        return redirect(url_for('login'))
+        
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        user = User.query.filter_by(username=username).first()
+        
+        # Admin has a plain text default password based on our DB setup, 
+        # but regular users have hashed passwords. We check both.
+        if user and (check_password_hash(user.password, password) or user.password == password):
+            if user.status == 'pending':
+                flash("Your account is pending Admin approval.")
+                return redirect(url_for('login'))
+                
+            # Log the user in by storing data in the session
+            session['user_id'] = user.id
+            session['role'] = user.role
+            
+            # Route to appropriate dashboards based on role
+            if user.role == 'admin':
+                return redirect(url_for('admin_dashboard'))
+            elif user.role == 'examiner':
+                return redirect(url_for('examiner_dashboard'))
+            elif user.role == 'student':
+                return redirect(url_for('student_dashboard'))
+                
+        flash("Invalid username or password.")
+        return redirect(url_for('login'))
+        
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+# Placeholder routes for dashboards to prevent crash on successful login
+@app.route('/admin_dashboard')
+def admin_dashboard():
+    return "Admin Dashboard - Under Construction"
+
+@app.route('/examiner_dashboard')
+def examiner_dashboard():
+    return "Examiner Dashboard - Under Construction"
+
+@app.route('/student_dashboard')
+def student_dashboard():
+    return "Student Dashboard - Under Construction"
 # Home route
 @app.route('/')
 def home():

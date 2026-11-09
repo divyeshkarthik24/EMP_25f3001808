@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 main-box">
+        
+        <h3 class="text-center mb-4">Login to Portal</h3>
+        
+        <!-- Login Form -->
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="mb-3">
+                <label><b>Username</b></label>
+                <input type="text" class="form-control" name="username" placeholder="Enter your username" required>
+            </div>
+            
+            <div class="mb-4">
+                <label><b>Password</b></label>
+                <input type="password" class="form-control" name="password" placeholder="Enter your password" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+        </form>
+
+        <hr class="mt-4">
+        <p class="text-center">
+            Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+        </p>
+
+    </div>
+</div>
+{% endblock %}

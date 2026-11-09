@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5 main-box">
+        
+        <h3 class="text-center mb-4">New User Registration</h3>
+        
+        <!-- Registration Form -->
+        <form method="POST" action="{{ url_for('register') }}">
+            <div class="mb-3">
+                <label><b>Choose Username</b></label>
+                <input type="text" class="form-control" name="username" required>
+            </div>
+            
+            <div class="mb-3">
+                <label><b>Create Password</b></label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
+            
+            <div class="mb-4">
+                <label><b>Select Role</b></label>
+                <select class="form-select" name="role" required>
+                    <option value="" disabled selected>-- Select your role --</option>
+                    <option value="student">Student</option>
+                    <option value="examiner">Examiner</option>
+                </select>
+                <small class="text-muted">Examiner accounts need admin approval.</small>
+            </div>
+            
+            <button type="submit" class="btn btn-success w-100">Register Account</button>
+        </form>
+
+        <hr class="mt-4">
+        <p class="text-center">
+            <a href="{{ url_for('login') }}">Go back to Login</a>
+        </p>
+
+    </div>
+</div>
+{% endblock %}
