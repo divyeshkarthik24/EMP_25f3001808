@@ -6,7 +6,7 @@
     <div class="col-md-3">
         <div class="list-group">
             <a href="#" class="list-group-item list-group-item-action active">Dashboard Home</a>
-            <a href="#" class="list-group-item list-group-item-action">Manage Courses</a>
+            <a href="{{ url_for('manage_courses') }}" class="list-group-item list-group-item-action">Manage Courses</a>
             <a href="#" class="list-group-item list-group-item-action">Manage Exams</a>
             <a href="#" class="list-group-item list-group-item-action">Approve Examiners</a>
             <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>

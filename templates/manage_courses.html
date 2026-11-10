@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">Dashboard Home</a>
+            <a href="{{ url_for('manage_courses') }}" class="list-group-item list-group-item-action active">Manage Courses</a>
+            <a href="#" class="list-group-item list-group-item-action">Manage Exams</a>
+            <a href="#" class="list-group-item list-group-item-action">Approve Examiners</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-md-9">
+        <h4>Manage Courses</h4>
+        <hr>
+        
+        <!-- Add New Course Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-light"><b>Create New Course</b></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('manage_courses') }}">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label>Course Code</label>
+                            <input type="text" class="form-control" name="course_code" placeholder="e.g., CS101" required>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label>Course Name</label>
+                            <input type="text" class="form-control" name="name" placeholder="e.g., Intro to Programming" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label>Course Description (Optional)</label>
+                        <textarea class="form-control" name="description" rows="2"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Add Course</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Existing Courses -->
+        <h5>Existing Courses</h5>
+        {% if courses %}
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Course Code</th>
+                        <th>Course Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td>{{ course.id }}</td>
+                        <td><b>{{ course.course_code }}</b></td>
+                        <td>{{ course.name }}</td>
+                        <td>{{ course.description }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="alert alert-secondary">No courses found. Please add one above.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

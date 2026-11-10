@@ -210,7 +210,35 @@ def admin_dashboard():
                            examiner_count=examiner_count,
                            slot_count=slot_count,
                            booking_count=booking_count)
-
+@app.route('/admin/manage_courses', methods=['GET', 'POST'])
+@login_required(role='admin')
+def manage_courses():
+    if request.method == 'POST':
+        course_code = request.form['course_code'].strip()
+        name = request.form['name'].strip()
+        description = request.form['description'].strip()
+        
+        # Backend validation: check if fields are empty
+        if not course_code or not name:
+            flash("Course Code and Name are strictly required.")
+            return redirect(url_for('manage_courses'))
+            
+        # Backend validation: prevent duplicate course codes
+        if Course.query.filter_by(course_code=course_code).first():
+            flash("Error: A course with this code already exists.")
+            return redirect(url_for('manage_courses'))
+            
+        # Add to database
+        new_course = Course(course_code=course_code, name=name, description=description)
+        db.session.add(new_course)
+        db.session.commit()
+        
+        flash(f"Course '{course_code} - {name}' created successfully.")
+        return redirect(url_for('manage_courses'))
+        
+    # GET request: fetch all courses to display in the table
+    courses = Course.query.all()
+    return render_template('manage_courses.html', courses=courses)
 @app.route('/student_dashboard')
 @login_required(role='student')
 def student_dashboard():
