@@ -72,16 +72,17 @@ class ExaminationRubric(db.Model):
 class ExaminationSlot(db.Model):
     __tablename__ = 'examination_slot'
     id = db.Column(db.Integer, primary_key=True)
+    examination_id = db.Column(db.Integer, db.ForeignKey('examination.id'), nullable=False) # ADDED THIS
     examiner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
     max_capacity = db.Column(db.Integer, nullable=False)
     available_seats = db.Column(db.Integer, nullable=False)
-    status = db.Column(db.String(20), default='Available') # Status state
+    status = db.Column(db.String(20), default='Available')
     
-    # Booking relation
+    # Establish relationship to Examination to easily access exam details
+    examination = db.relationship('Examination', backref='slots', lazy=True)
     bookings = db.relationship('Booking', backref='slot', lazy=True)
-
 # Booking model
 class Booking(db.Model):
     __tablename__ = 'booking'
@@ -334,7 +335,63 @@ def student_dashboard():
 def examiner_dashboard():
     # We will query assigned exams and slots here later
     return render_template('examiner_dashboard.html')
-
+@app.route('/examiner/manage_slots', methods=['GET', 'POST'])
+@login_required(role='examiner')
+def manage_slots():
+    if request.method == 'POST':
+        exam_id = request.form['exam_id']
+        max_capacity = int(request.form['max_capacity'])
+        
+        # Parse slot times
+        fmt = '%Y-%m-%dT%H:%M'
+        try:
+            start_time = datetime.strptime(request.form['start_time'], fmt)
+            end_time = datetime.strptime(request.form['end_time'], fmt)
+        except ValueError:
+            flash("Error parsing dates.")
+            return redirect(url_for('manage_slots'))
+            
+        exam = Examination.query.get(exam_id)
+        current_time = datetime.now()
+        
+        # 1. Admin Window Validation: Check if the examiner is allowed to create slots right now
+        if not (exam.slot_creation_start <= current_time <= exam.slot_creation_end):
+            flash(f"Error: Slot creation for '{exam.name}' is currently closed. Allowed from {exam.slot_creation_start} to {exam.slot_creation_end}.")
+            return redirect(url_for('manage_slots'))
+            
+        # 2. Chronological Validation: End time must be after start time
+        if start_time >= end_time:
+            flash("Error: End time must be after start time.")
+            return redirect(url_for('manage_slots'))
+            
+        # 3. NEW: Prevent scheduling slots in the past
+        if start_time < current_time:
+            flash("Error: Examination slot cannot be scheduled in the past.")
+            return redirect(url_for('manage_slots'))
+            
+        # 4. NEW: Ensure the slot happens AFTER the student booking window ends
+        if start_time < exam.booking_end:
+            flash(f"Error: Slot must be scheduled after the student booking window ends ({exam.booking_end}).")
+            return redirect(url_for('manage_slots'))
+            
+        new_slot = ExaminationSlot(
+            examination_id=exam.id,
+            examiner_id=session['user_id'],
+            start_time=start_time,
+            end_time=end_time,
+            max_capacity=max_capacity,
+            available_seats=max_capacity # Seats initially equal max capacity
+        )
+        db.session.add(new_slot)
+        db.session.commit()
+        
+        flash("Examination slot created successfully.")
+        return redirect(url_for('manage_slots'))
+        
+    # GET request: fetch exams and the current examiner's slots
+    exams = Examination.query.all()
+    my_slots = ExaminationSlot.query.filter_by(examiner_id=session['user_id']).all()
+    return render_template('manage_slots.html', exams=exams, my_slots=my_slots)
 # Run app
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Examiner Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('examiner_dashboard') }}" class="list-group-item list-group-item-action">My Dashboard</a>
+            <a href="{{ url_for('manage_slots') }}" class="list-group-item list-group-item-action active">Manage Slots</a>
+            <a href="#" class="list-group-item list-group-item-action">View Booked Students</a>
+            <a href="#" class="list-group-item list-group-item-action">Evaluate</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-md-9">
+        <h4>Manage Examination Slots</h4>
+        <hr>
+        
+        <!-- Add New Slot Form -->
+        <div class="card mb-4">
+            <div class="card-header bg-light"><b>Create New Slot</b></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('manage_slots') }}">
+                    <div class="mb-3">
+                        <label>Select Examination</label>
+                        <select class="form-select" name="exam_id" required>
+                            <option value="" disabled selected>-- Select Exam --</option>
+                            {% for exam in exams %}
+                                <option value="{{ exam.id }}">{{ exam.course.course_code }} - {{ exam.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="text-muted">You can only create slots if the Admin's creation window is currently open.</small>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label>Start Time</label>
+                            <input type="datetime-local" class="form-control" name="start_time" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label>End Time</label>
+                            <input type="datetime-local" class="form-control" name="end_time" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Maximum Capacity</label>
+                            <input type="number" class="form-control" name="max_capacity" min="1" required placeholder="e.g., 30">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Create Slot</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Existing Slots -->
+        <h5>My Slots</h5>
+        {% if my_slots %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" style="font-size: 0.9em;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Capacity</th>
+                            <th>Available</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for slot in my_slots %}
+                        <tr>
+                            <td><b>{{ slot.examination.name }}</b></td>
+                            <td>{{ slot.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ slot.end_time.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>{{ slot.max_capacity }}</td>
+                            <td>{{ slot.available_seats }}</td>
+                            <td>
+                                {% if slot.status == 'Available' %}
+                                    <span class="badge bg-success">Available</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ slot.status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">You have not created any slots yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
