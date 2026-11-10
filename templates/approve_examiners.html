@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">Dashboard Home</a>
+            <a href="{{ url_for('manage_courses') }}" class="list-group-item list-group-item-action">Manage Courses</a>
+            <a href="#" class="list-group-item list-group-item-action">Manage Exams</a>
+            <a href="{{ url_for('approve_examiners') }}" class="list-group-item list-group-item-action active">Approve Examiners</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-md-9">
+        <h4>Approve Examiner Registrations</h4>
+        <hr>
+        <p>Review and approve newly registered examiners. They cannot access their dashboard until approved.</p>
+        
+        {% if pending_examiners %}
+            <table class="table table-bordered table-striped mt-3">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for examiner in pending_examiners %}
+                    <tr>
+                        <td>{{ examiner.id }}</td>
+                        <td><b>{{ examiner.username }}</b></td>
+                        <td>{{ examiner.role | capitalize }}</td>
+                        <td>
+                            <!-- Form to safely send a POST request for approval -->
+                            <form method="POST" action="{{ url_for('approve_examiner_action', user_id=examiner.id) }}">
+                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="alert alert-success mt-4">
+                No pending examiner registrations at this time.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
