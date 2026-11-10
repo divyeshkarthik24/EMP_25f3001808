@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Admin Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('admin_dashboard') }}" class="list-group-item list-group-item-action">Dashboard Home</a>
+            <a href="{{ url_for('manage_courses') }}" class="list-group-item list-group-item-action">Manage Courses</a>
+            <a href="{{ url_for('manage_exams') }}" class="list-group-item list-group-item-action active">Manage Exams</a>
+            <a href="{{ url_for('approve_examiners') }}" class="list-group-item list-group-item-action">Approve Examiners</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-md-9">
+        <h4>Manage Examinations & Timelines</h4>
+        <hr>
+        
+        <div class="card mb-4">
+            <div class="card-header bg-light"><b>Create New Examination</b></div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('manage_exams') }}">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label>Select Course</label>
+                            <select class="form-select" name="course_id" required>
+                                <option value="" disabled selected>-- Select a Course --</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.course_code }} - {{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Examination Name</label>
+                            <input type="text" class="form-control" name="name" placeholder="e.g., Final Assessment" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label>Exam Type</label>
+                            <select class="form-select" name="exam_type" required>
+                                <option value="Assessment">Assessment</option>
+                                <option value="Viva">Viva</option>
+                                <option value="Practical">Practical</option>
+                                <option value="Project Demo">Project Demo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label>Duration (Minutes)</label>
+                            <input type="number" class="form-control" name="duration" required min="1">
+                        </div>
+                        <div class="col-md-4">
+                            <label>Max Marks</label>
+                            <input type="number" class="form-control" name="max_marks" required min="1">
+                        </div>
+                    </div>
+
+                    <h6 class="mt-4 border-bottom pb-2">Timeline Configuration</h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label>Slot Creation Start</label>
+                            <input type="datetime-local" class="form-control" name="slot_creation_start" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Slot Creation End</label>
+                            <input type="datetime-local" class="form-control" name="slot_creation_end" required>
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label>Student Booking Start</label>
+                            <input type="datetime-local" class="form-control" name="booking_start" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label>Student Booking End</label>
+                            <input type="datetime-local" class="form-control" name="booking_end" required>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">Create Examination</button>
+                </form>
+            </div>
+        </div>
+
+        <h5>Existing Examinations</h5>
+        {% if exams %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" style="font-size: 0.9em;">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Course</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Duration</th>
+                            <th>Marks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in exams %}
+                        <tr>
+                            <td>{{ exam.id }}</td>
+                            <td>{{ exam.course.course_code }}</td>
+                            <td><b>{{ exam.name }}</b></td>
+                            <td>{{ exam.exam_type }}</td>
+                            <td>{{ exam.duration }} mins</td>
+                            <td>{{ exam.max_marks }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">No examinations created yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

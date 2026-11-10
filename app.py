@@ -260,6 +260,43 @@ def manage_courses():
     # GET request: fetch all courses to display in the table
     courses = Course.query.all()
     return render_template('manage_courses.html', courses=courses)
+@app.route('/admin/manage_exams', methods=['GET', 'POST'])
+@login_required(role='admin')
+def manage_exams():
+    if request.method == 'POST':
+        course_id = request.form['course_id']
+        name = request.form['name'].strip()
+        exam_type = request.form['exam_type']
+        duration = request.form['duration']
+        max_marks = request.form['max_marks']
+        
+        # Parse datetime strings from the HTML5 datetime-local inputs
+        fmt = '%Y-%m-%dT%H:%M'
+        try:
+            slot_start = datetime.strptime(request.form['slot_creation_start'], fmt)
+            slot_end = datetime.strptime(request.form['slot_creation_end'], fmt)
+            booking_start = datetime.strptime(request.form['booking_start'], fmt)
+            booking_end = datetime.strptime(request.form['booking_end'], fmt)
+        except ValueError:
+            flash("Error parsing dates. Please try again.")
+            return redirect(url_for('manage_exams'))
+            
+        new_exam = Examination(
+            course_id=course_id, name=name, exam_type=exam_type,
+            duration=duration, max_marks=max_marks,
+            slot_creation_start=slot_start, slot_creation_end=slot_end,
+            booking_start=booking_start, booking_end=booking_end
+        )
+        db.session.add(new_exam)
+        db.session.commit()
+        
+        flash(f"Examination '{name}' created successfully.")
+        return redirect(url_for('manage_exams'))
+        
+    # GET request: fetch courses for the dropdown and exams for the table
+    courses = Course.query.all()
+    exams = Examination.query.all()
+    return render_template('manage_exams.html', courses=courses, exams=exams)
 
 @app.route('/admin/approve_examiners')
 @login_required(role='admin')

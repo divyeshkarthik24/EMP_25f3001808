@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Examiner Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('examiner_dashboard') }}" class="list-group-item list-group-item-action active">My Dashboard</a>
+            <a href="#" class="list-group-item list-group-item-action">Manage Slots</a>
+            <a href="#" class="list-group-item list-group-item-action">View Booked Students</a>
+            <a href="#" class="list-group-item list-group-item-action">Evaluate</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Examiner Main Area -->
+    <div class="col-md-9">
+        <h4>Examiner Dashboard</h4>
+        <hr>
+        <p>Welcome to your portal. Here you can create examination slots, view your assigned students, and submit evaluations.</p>
+        
+        <div class="card mt-4">
+            <div class="card-header bg-primary text-white">
+                My Examination Slots
+            </div>
+            <div class="card-body text-center text-muted">
+                <p>No slots created yet. Wait for the Admin to open the slot creation period.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
