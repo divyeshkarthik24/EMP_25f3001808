@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Student Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('student_dashboard') }}" class="list-group-item list-group-item-action">My Dashboard</a>
+            <a href="{{ url_for('book_slots') }}" class="list-group-item list-group-item-action">Search Examinations</a>
+            <a href="{{ url_for('my_bookings') }}" class="list-group-item list-group-item-action active">My Bookings</a>
+            <a href="#" class="list-group-item list-group-item-action">View Results</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-md-9">
+        <h4>My Booked Examinations</h4>
+        <hr>
+        
+        {% if bookings %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Exam Name</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for booking in bookings %}
+                        <tr>
+                            <td><b>{{ booking.slot.examination.name }}</b></td>
+                            <td>{{ booking.slot.examination.exam_type }}</td>
+                            <td>{{ booking.slot.start_time.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ booking.slot.start_time.strftime('%H:%M') }} - {{ booking.slot.end_time.strftime('%H:%M') }}</td>
+                            <td><span class="badge bg-primary">{{ booking.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">You have not booked any examination slots yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -372,6 +372,12 @@ def book_slots():
     # GET request: fetch all slots that aren't full
     open_slots = ExaminationSlot.query.filter(ExaminationSlot.available_seats > 0).all()
     return render_template('book_slots.html', slots=open_slots, current_time=current_time)
+@app.route('/student/my_bookings')
+@login_required(role='student')
+def my_bookings():
+    # Fetch all bookings for the currently logged-in student
+    bookings = Booking.query.filter_by(student_id=session['user_id']).all()
+    return render_template('my_bookings.html', bookings=bookings)
 
 # --- EXAMINER ROUTES ---
 
@@ -437,6 +443,16 @@ def manage_slots():
     exams = Examination.query.all()
     my_slots = ExaminationSlot.query.filter_by(examiner_id=session['user_id']).all()
     return render_template('manage_slots.html', exams=exams, my_slots=my_slots)
+@app.route('/examiner/booked_students')
+@login_required(role='examiner')
+def booked_students():
+    # Find all slots managed by this examiner
+    my_slots = ExaminationSlot.query.filter_by(examiner_id=session['user_id']).all()
+    slot_ids = [slot.id for slot in my_slots]
+    
+    # Fetch all bookings that belong to any of those slots
+    bookings = Booking.query.filter(Booking.slot_id.in_(slot_ids)).all()
+    return render_template('booked_students.html', bookings=bookings)
 # Run app
 if __name__ == '__main__':
     app.run(debug=True)
