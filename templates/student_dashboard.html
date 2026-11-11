@@ -6,7 +6,7 @@
     <div class="col-md-3">
         <div class="list-group">
             <a href="{{ url_for('student_dashboard') }}" class="list-group-item list-group-item-action active">My Dashboard</a>
-            <a href="#" class="list-group-item list-group-item-action">Search Examinations</a>
+            <a href="{{ url_for('book_slots') }}" class="list-group-item list-group-item-action">Search Examinations</a>
             <a href="#" class="list-group-item list-group-item-action">My Bookings</a>
             <a href="#" class="list-group-item list-group-item-action">View Results</a>
             <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>

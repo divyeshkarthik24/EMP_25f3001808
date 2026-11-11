@@ -327,6 +327,51 @@ def approve_examiner_action(user_id):
 def student_dashboard():
     # We will query actual available exams and bookings here in the next phase
     return render_template('student_dashboard.html')
+@app.route('/student/book_slots', methods=['GET', 'POST'])
+@login_required(role='student')
+def book_slots():
+    current_time = datetime.now()
+    
+    if request.method == 'POST':
+        slot_id = request.form.get('slot_id')
+        slot = ExaminationSlot.query.get_or_404(slot_id)
+        exam = slot.examination
+        
+        # Validation 1: Is the booking window currently open?
+        if not (exam.booking_start <= current_time <= exam.booking_end):
+            flash("Error: The booking window for this examination is currently closed.")
+            return redirect(url_for('book_slots'))
+            
+        # Validation 2: Are there still seats left?
+        if slot.available_seats <= 0:
+            flash("Error: This slot is fully booked.")
+            return redirect(url_for('book_slots'))
+            
+        # Validation 3: Has the student already booked a slot for this specific exam?
+        already_booked = Booking.query.join(ExaminationSlot).filter(
+            Booking.student_id == session['user_id'],
+            ExaminationSlot.examination_id == exam.id
+        ).first()
+        
+        if already_booked:
+            flash("Error: You have already booked a slot for this examination.")
+            return redirect(url_for('book_slots'))
+            
+        # Execute the booking
+        slot.available_seats -= 1
+        if slot.available_seats == 0:
+            slot.status = 'Full'
+            
+        new_booking = Booking(student_id=session['user_id'], slot_id=slot.id)
+        db.session.add(new_booking)
+        db.session.commit()
+        
+        flash(f"Successfully booked your slot for {exam.name}!")
+        return redirect(url_for('student_dashboard'))
+        
+    # GET request: fetch all slots that aren't full
+    open_slots = ExaminationSlot.query.filter(ExaminationSlot.available_seats > 0).all()
+    return render_template('book_slots.html', slots=open_slots, current_time=current_time)
 
 # --- EXAMINER ROUTES ---
 

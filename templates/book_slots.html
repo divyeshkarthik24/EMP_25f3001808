@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <!-- Student Navigation Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('student_dashboard') }}" class="list-group-item list-group-item-action">My Dashboard</a>
+            <a href="{{ url_for('book_slots') }}" class="list-group-item list-group-item-action active">Search Examinations</a>
+            <a href="#" class="list-group-item list-group-item-action">My Bookings</a>
+            <a href="#" class="list-group-item list-group-item-action">View Results</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="col-md-9">
+        <h4>Available Examination Slots</h4>
+        <hr>
+        <p>Browse available slots below. Note: You can only book slots during the designated booking window.</p>
+        
+        {% if slots %}
+            <div class="row">
+                {% for slot in slots %}
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-light">
+                            <b>{{ slot.examination.course.course_code }} - {{ slot.examination.name }}</b>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-1"><strong>Type:</strong> {{ slot.examination.exam_type }}</p>
+                            <p class="mb-1"><strong>Date:</strong> {{ slot.start_time.strftime('%Y-%m-%d') }}</p>
+                            <p class="mb-1"><strong>Time:</strong> {{ slot.start_time.strftime('%H:%M') }} to {{ slot.end_time.strftime('%H:%M') }}</p>
+                            <p class="mb-2"><strong>Seats Left:</strong> <span class="badge bg-info text-dark">{{ slot.available_seats }} / {{ slot.max_capacity }}</span></p>
+                            
+                            <!-- Booking logic based on timeline -->
+                            {% if current_time < slot.examination.booking_start %}
+                                <div class="alert alert-warning p-2 text-center mb-0" style="font-size: 0.9em;">
+                                    Booking opens on {{ slot.examination.booking_start.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            {% elif current_time > slot.examination.booking_end %}
+                                <div class="alert alert-danger p-2 text-center mb-0" style="font-size: 0.9em;">
+                                    Booking Closed
+                                </div>
+                            {% else %}
+                                <form method="POST" action="{{ url_for('book_slots') }}">
+                                    <input type="hidden" name="slot_id" value="{{ slot.id }}">
+                                    <button type="submit" class="btn btn-primary w-100">Book This Slot</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">No slots are currently available for booking.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
