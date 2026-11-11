@@ -91,7 +91,10 @@ class Booking(db.Model):
     slot_id = db.Column(db.Integer, db.ForeignKey('examination_slot.id'), nullable=False)
     booking_date = db.Column(db.DateTime, default=datetime.utcnow)
     status = db.Column(db.String(20), default='Booked') # Status state
-
+    
+    # NEW COLUMNS FOR EVALUATION
+    marks_obtained = db.Column(db.Float, nullable=True) 
+    feedback = db.Column(db.Text, nullable=True)
 # DB creation
 with app.app_context():
     db.create_all()
@@ -372,6 +375,12 @@ def book_slots():
     # GET request: fetch all slots that aren't full
     open_slots = ExaminationSlot.query.filter(ExaminationSlot.available_seats > 0).all()
     return render_template('book_slots.html', slots=open_slots, current_time=current_time)
+@app.route('/student/results')
+@login_required(role='student')
+def results():
+    # Fetch only bookings that have been evaluated by an examiner
+    evaluated_bookings = Booking.query.filter_by(student_id=session['user_id'], status='Evaluated').all()
+    return render_template('results.html', results=evaluated_bookings)
 @app.route('/student/my_bookings')
 @login_required(role='student')
 def my_bookings():
@@ -453,6 +462,34 @@ def booked_students():
     # Fetch all bookings that belong to any of those slots
     bookings = Booking.query.filter(Booking.slot_id.in_(slot_ids)).all()
     return render_template('booked_students.html', bookings=bookings)
+@app.route('/examiner/evaluate/<int:booking_id>', methods=['GET', 'POST'])
+@login_required(role='examiner')
+def evaluate(booking_id):
+    booking = Booking.query.get_or_404(booking_id)
+    
+    # Security Check: Ensure this booking belongs to a slot managed by THIS examiner
+    if booking.slot.examiner_id != session['user_id']:
+        flash("Unauthorized access: You do not manage this slot.")
+        return redirect(url_for('booked_students'))
+        
+    if request.method == 'POST':
+        marks = float(request.form['marks_obtained'])
+        max_marks = booking.slot.examination.max_marks
+        
+        # Validation: Marks cannot exceed the max marks defined by the Admin
+        if marks < 0 or marks > max_marks:
+            flash(f"Error: Marks must be between 0 and {max_marks}.")
+            return redirect(url_for('evaluate', booking_id=booking.id))
+            
+        booking.marks_obtained = marks
+        booking.feedback = request.form['feedback'].strip()
+        booking.status = 'Evaluated'
+        db.session.commit()
+        
+        flash(f"Evaluation submitted for Student #{booking.student_id}.")
+        return redirect(url_for('booked_students'))
+        
+    return render_template('evaluate.html', booking=booking)
 # Run app
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{{ url_for('student_dashboard') }}" class="list-group-item list-group-item-action">My Dashboard</a>
+            <a href="{{ url_for('book_slots') }}" class="list-group-item list-group-item-action">Search Examinations</a>
+            <a href="{{ url_for('my_bookings') }}" class="list-group-item list-group-item-action">My Bookings</a>
+            <a href="{{ url_for('results') }}" class="list-group-item list-group-item-action active">View Results</a>
+            <a href="{{ url_for('logout') }}" class="list-group-item list-group-item-action text-danger"><b>Logout</b></a>
+        </div>
+    </div>
+
+    <div class="col-md-9">
+        <h4>My Examination Results</h4>
+        <hr>
+        
+        {% if results %}
+            <div class="row">
+                {% for result in results %}
+                <div class="col-md-12 mb-3">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <b>{{ result.slot.examination.name }}</b>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <p class="mb-1"><strong>Course:</strong> {{ result.slot.examination.course.course_code }}</p>
+                                    <p class="mb-1"><strong>Exam Type:</strong> {{ result.slot.examination.exam_type }}</p>
+                                    <p class="mb-2"><strong>Feedback:</strong> {{ result.feedback }}</p>
+                                </div>
+                                <div class="col-md-4 text-center border-start">
+                                    <h5 class="text-muted">Score</h5>
+                                    <h2 class="text-success">{{ result.marks_obtained }} <small class="text-muted fs-6">/ {{ result.slot.examination.max_marks }}</small></h2>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-secondary">No results published yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

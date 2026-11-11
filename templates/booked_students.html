@@ -35,7 +35,13 @@
                             <td><b>Student #{{ booking.student_id }}</b></td>
                             <td>{{ booking.slot.examination.name }}</td>
                             <td>{{ booking.slot.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
-                            <td><span class="badge bg-info text-dark">{{ booking.status }}</span></td>
+                            <td>
+                                {% if booking.status == 'Booked' %}
+                                    <a href="{{ url_for('evaluate', booking_id=booking.id) }}" class="btn btn-sm btn-primary">Evaluate</a>
+                                {% else %}
+                                    <span class="badge bg-success">Evaluated ({{ booking.marks_obtained }})</span>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
