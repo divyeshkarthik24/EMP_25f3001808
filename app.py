@@ -103,7 +103,7 @@ with app.app_context():
         db.session.commit()
         print("Admin generated.")
 
-# --- RBAC DECORATOR ---
+# --- RBAC_DECORATOR ---
 def login_required(role):
     def wrapper(fn):
         @wraps(fn)
