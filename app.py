@@ -1,3 +1,4 @@
+# Imports
 import os
 from datetime import datetime
 from functools import wraps
@@ -5,10 +6,10 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 
-# App init
+# Init App
 app = Flask(__name__)
 
-# DB setup
+# DB Config
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'emp.sqlite3')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -17,18 +18,18 @@ app.config['SECRET_KEY'] = 'dev-secret-key-emp-2026'
 # Init DB
 db = SQLAlchemy(app)
 
-# --- DATABASE MODELS ---
+# --- MODELS ---
 
-# User model
+# User
 class User(db.Model):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False) # Needs hashing
-    role = db.Column(db.String(20), nullable=False)      # Role types
-    status = db.Column(db.String(20), default='approved') # Default status
+    password = db.Column(db.String(200), nullable=False) 
+    role = db.Column(db.String(20), nullable=False)      
+    status = db.Column(db.String(20), default='approved') 
 
-# Course model
+# Course
 class Course(db.Model):
     __tablename__ = 'course'
     id = db.Column(db.Integer, primary_key=True)
@@ -36,29 +37,26 @@ class Course(db.Model):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     
-    # Exam relation
     examinations = db.relationship('Examination', backref='course', lazy=True)
 
-# Exam model
+# Exam
 class Examination(db.Model):
     __tablename__ = 'examination'
     id = db.Column(db.Integer, primary_key=True)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    exam_type = db.Column(db.String(50), nullable=False) # Exam type
-    duration = db.Column(db.Integer, nullable=False)     # Minutes duration
+    exam_type = db.Column(db.String(50), nullable=False) 
+    duration = db.Column(db.Integer, nullable=False)     
     max_marks = db.Column(db.Integer, nullable=False)
     
-    # Timeline settings
     slot_creation_start = db.Column(db.DateTime, nullable=False)
     slot_creation_end = db.Column(db.DateTime, nullable=False)
     booking_start = db.Column(db.DateTime, nullable=False)
     booking_end = db.Column(db.DateTime, nullable=False)
     
-    # Rubric relation
     rubrics = db.relationship('ExaminationRubric', backref='examination', lazy=True)
 
-# Rubric model
+# Rubric
 class ExaminationRubric(db.Model):
     __tablename__ = 'examination_rubric'
     id = db.Column(db.Integer, primary_key=True)
@@ -68,11 +66,11 @@ class ExaminationRubric(db.Model):
     weightage = db.Column(db.Float, nullable=False)
     description = db.Column(db.Text)
 
-# Slot model
+# Slot
 class ExaminationSlot(db.Model):
     __tablename__ = 'examination_slot'
     id = db.Column(db.Integer, primary_key=True)
-    examination_id = db.Column(db.Integer, db.ForeignKey('examination.id'), nullable=False) # ADDED THIS
+    examination_id = db.Column(db.Integer, db.ForeignKey('examination.id'), nullable=False) 
     examiner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     start_time = db.Column(db.DateTime, nullable=False)
     end_time = db.Column(db.DateTime, nullable=False)
@@ -80,43 +78,43 @@ class ExaminationSlot(db.Model):
     available_seats = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='Available')
     
-    # Establish relationship to Examination to easily access exam details
     examination = db.relationship('Examination', backref='slots', lazy=True)
     bookings = db.relationship('Booking', backref='slot', lazy=True)
-# Booking model
+
+# Booking
 class Booking(db.Model):
     __tablename__ = 'booking'
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     slot_id = db.Column(db.Integer, db.ForeignKey('examination_slot.id'), nullable=False)
     booking_date = db.Column(db.DateTime, default=datetime.utcnow)
-    status = db.Column(db.String(20), default='Booked') # Status state
+    status = db.Column(db.String(20), default='Booked') 
     
-    # NEW COLUMNS FOR EVALUATION
     marks_obtained = db.Column(db.Float, nullable=True) 
     feedback = db.Column(db.Text, nullable=True)
-# DB creation
+
+# Create DB
 with app.app_context():
     db.create_all()
-    
-    # Admin setup
+    # Create Admin
     if not User.query.filter_by(role='admin').first():
         default_admin = User(username='admin', password='admin123', role='admin')
         db.session.add(default_admin)
         db.session.commit()
-        print("Pre-existing Admin user created successfully.")
+        print("Admin generated.")
 
-# --- ROLE-BASED ACCESS CONTROL DECORATOR ---
+# --- RBAC DECORATOR ---
 def login_required(role):
     def wrapper(fn):
         @wraps(fn)
         def decorated_view(*args, **kwargs):
+            # Check Login
             if 'user_id' not in session:
-                flash("Please log in to access this page.")
+                flash("Please log in.")
                 return redirect(url_for('login'))
+            # Verify Role
             if session.get('role') != role:
-                flash("Access denied. You do not have the required permissions.")
-                # Send them back to their own dashboard
+                flash("Access denied.")
                 if session.get('role') == 'student':
                     return redirect(url_for('student_dashboard'))
                 elif session.get('role') == 'examiner':
@@ -126,11 +124,11 @@ def login_required(role):
         return decorated_view
     return wrapper
 
-# --- CORE ROUTES ---
+# --- ROUTING ---
 
+# Root
 @app.route('/')
 def home():
-    # If the user is already logged in, send them to their specific dashboard
     if 'user_id' in session:
         if session.get('role') == 'admin':
             return redirect(url_for('admin_dashboard'))
@@ -138,12 +136,9 @@ def home():
             return redirect(url_for('examiner_dashboard'))
         elif session.get('role') == 'student':
             return redirect(url_for('student_dashboard'))
-            
-    # Otherwise, send them to the login page
     return redirect(url_for('login'))
 
-# --- AUTHENTICATION ROUTES ---
-
+# Register
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -151,52 +146,52 @@ def register():
         password = request.form['password']
         role = request.form['role']
         
-        # Enforce constraint: Admin cannot be registered via the portal
+        # Block Admin
         if role == 'admin':
-            flash("Admin registration is not permitted.")
+            flash("Admin registration denied.")
             return redirect(url_for('register'))
             
-        # Check if user already exists
+        # Check Duplicate
         if User.query.filter_by(username=username).first():
-            flash("Username already exists. Please choose another.")
+            flash("Username exists.")
             return redirect(url_for('register'))
             
-        # Hash password and create user
+        # Hash Password
         hashed_password = generate_password_hash(password)
-        
-        # Examiners require admin approval, so default status is 'pending'
-        # Students are automatically 'approved'
+        # Set Status
         status = 'pending' if role == 'examiner' else 'approved'
         
+        # Save User
         new_user = User(username=username, password=hashed_password, role=role, status=status)
         db.session.add(new_user)
         db.session.commit()
         
-        flash("Registration successful! Please log in.")
+        flash("Registration successful!")
         return redirect(url_for('login'))
-        
     return render_template('register.html')
 
+# Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
         
+        # Fetch User
         user = User.query.filter_by(username=username).first()
         
-        # Admin has a plain text default password based on our DB setup, 
-        # but regular users have hashed passwords. We check both.
+        # Verify Auth
         if user and (check_password_hash(user.password, password) or user.password == password):
+            # Check Approval
             if user.status == 'pending':
-                flash("Your account is pending Admin approval.")
+                flash("Pending Admin approval.")
                 return redirect(url_for('login'))
                 
-            # Log the user in by storing data in the session
+            # Set Session
             session['user_id'] = user.id
             session['role'] = user.role
             
-            # Route to appropriate dashboards based on role
+            # Route Role
             if user.role == 'admin':
                 return redirect(url_for('admin_dashboard'))
             elif user.role == 'examiner':
@@ -204,22 +199,23 @@ def login():
             elif user.role == 'student':
                 return redirect(url_for('student_dashboard'))
                 
-        flash("Invalid username or password.")
+        flash("Invalid credentials.")
         return redirect(url_for('login'))
-        
     return render_template('login.html')
 
+# Logout
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
-# --- ADMIN ROUTES ---
+# --- ADMIN ---
 
+# Admin Dash
 @app.route('/admin_dashboard')
 @login_required(role='admin')
 def admin_dashboard():
-    # Fetching all required statistics for the admin dashboard
+    # Fetch Stats
     course_count = Course.query.count()
     exam_count = Examination.query.count()
     student_count = User.query.filter_by(role='student').count()
@@ -235,6 +231,7 @@ def admin_dashboard():
                            slot_count=slot_count,
                            booking_count=booking_count)
 
+# Setup Courses
 @app.route('/admin/manage_courses', methods=['GET', 'POST'])
 @login_required(role='admin')
 def manage_courses():
@@ -243,27 +240,28 @@ def manage_courses():
         name = request.form['name'].strip()
         description = request.form['description'].strip()
         
-        # Backend validation: check if fields are empty
+        # Validate Input
         if not course_code or not name:
-            flash("Course Code and Name are strictly required.")
+            flash("Required fields missing.")
             return redirect(url_for('manage_courses'))
             
-        # Backend validation: prevent duplicate course codes
+        # Check Duplicate
         if Course.query.filter_by(course_code=course_code).first():
-            flash("Error: A course with this code already exists.")
+            flash("Course exists.")
             return redirect(url_for('manage_courses'))
             
-        # Add to database
+        # Save Course
         new_course = Course(course_code=course_code, name=name, description=description)
         db.session.add(new_course)
         db.session.commit()
         
-        flash(f"Course '{course_code} - {name}' created successfully.")
+        flash("Course created.")
         return redirect(url_for('manage_courses'))
         
-    # GET request: fetch all courses to display in the table
     courses = Course.query.all()
     return render_template('manage_courses.html', courses=courses)
+
+# Setup Exams
 @app.route('/admin/manage_exams', methods=['GET', 'POST'])
 @login_required(role='admin')
 def manage_exams():
@@ -274,7 +272,7 @@ def manage_exams():
         duration = request.form['duration']
         max_marks = request.form['max_marks']
         
-        # Parse datetime strings from the HTML5 datetime-local inputs
+        # Parse Dates
         fmt = '%Y-%m-%dT%H:%M'
         try:
             slot_start = datetime.strptime(request.form['slot_creation_start'], fmt)
@@ -282,9 +280,10 @@ def manage_exams():
             booking_start = datetime.strptime(request.form['booking_start'], fmt)
             booking_end = datetime.strptime(request.form['booking_end'], fmt)
         except ValueError:
-            flash("Error parsing dates. Please try again.")
+            flash("Date error.")
             return redirect(url_for('manage_exams'))
             
+        # Save Exam
         new_exam = Examination(
             course_id=course_id, name=name, exam_type=exam_type,
             duration=duration, max_marks=max_marks,
@@ -294,42 +293,44 @@ def manage_exams():
         db.session.add(new_exam)
         db.session.commit()
         
-        flash(f"Examination '{name}' created successfully.")
+        flash("Exam created.")
         return redirect(url_for('manage_exams'))
         
-    # GET request: fetch courses for the dropdown and exams for the table
     courses = Course.query.all()
     exams = Examination.query.all()
     return render_template('manage_exams.html', courses=courses, exams=exams)
 
+# Pending List
 @app.route('/admin/approve_examiners')
 @login_required(role='admin')
 def approve_examiners():
-    # Fetch all users who registered as examiners but are still pending
     pending_examiners = User.query.filter_by(role='examiner', status='pending').all()
     return render_template('approve_examiners.html', pending_examiners=pending_examiners)
 
+# Approve Action
 @app.route('/admin/approve_examiner/<int:user_id>', methods=['POST'])
 @login_required(role='admin')
 def approve_examiner_action(user_id):
-    # Find the user by ID or return a 404 error if they don't exist
-    examiner = User.query.get_or_404(user_id)
+    # Fetch User
+    examiner = db.get_or_404(User, user_id) 
     
-    # Ensure we are only approving pending examiners
+    # Update Status
     if examiner.role == 'examiner' and examiner.status == 'pending':
         examiner.status = 'approved'
         db.session.commit()
-        flash(f"Examiner '{examiner.username}' has been successfully approved.")
+        flash("Examiner approved.")
         
     return redirect(url_for('approve_examiners'))
 
-# --- STUDENT ROUTES ---
+# --- STUDENT ---
 
+# Student Dash
 @app.route('/student_dashboard')
 @login_required(role='student')
 def student_dashboard():
-    # We will query actual available exams and bookings here in the next phase
     return render_template('student_dashboard.html')
+
+# Book Slot
 @app.route('/student/book_slots', methods=['GET', 'POST'])
 @login_required(role='student')
 def book_slots():
@@ -337,64 +338,68 @@ def book_slots():
     
     if request.method == 'POST':
         slot_id = request.form.get('slot_id')
-        slot = ExaminationSlot.query.get_or_404(slot_id)
+        slot = db.get_or_404(ExaminationSlot, slot_id)
         exam = slot.examination
         
-        # Validation 1: Is the booking window currently open?
+        # Verify Window
         if not (exam.booking_start <= current_time <= exam.booking_end):
-            flash("Error: The booking window for this examination is currently closed.")
+            flash("Booking closed.")
             return redirect(url_for('book_slots'))
             
-        # Validation 2: Are there still seats left?
+        # Verify Seats
         if slot.available_seats <= 0:
-            flash("Error: This slot is fully booked.")
+            flash("Slot full.")
             return redirect(url_for('book_slots'))
             
-        # Validation 3: Has the student already booked a slot for this specific exam?
+        # Verify Duplicate
         already_booked = Booking.query.join(ExaminationSlot).filter(
             Booking.student_id == session['user_id'],
             ExaminationSlot.examination_id == exam.id
         ).first()
         
         if already_booked:
-            flash("Error: You have already booked a slot for this examination.")
+            flash("Already booked.")
             return redirect(url_for('book_slots'))
             
-        # Execute the booking
+        # Update Capacity
         slot.available_seats -= 1
         if slot.available_seats == 0:
             slot.status = 'Full'
             
+        # Save Booking
         new_booking = Booking(student_id=session['user_id'], slot_id=slot.id)
         db.session.add(new_booking)
         db.session.commit()
         
-        flash(f"Successfully booked your slot for {exam.name}!")
+        flash("Booking successful!")
         return redirect(url_for('student_dashboard'))
         
-    # GET request: fetch all slots that aren't full
     open_slots = ExaminationSlot.query.filter(ExaminationSlot.available_seats > 0).all()
     return render_template('book_slots.html', slots=open_slots, current_time=current_time)
+
+# View Results
 @app.route('/student/results')
 @login_required(role='student')
 def results():
-    # Fetch only bookings that have been evaluated by an examiner
     evaluated_bookings = Booking.query.filter_by(student_id=session['user_id'], status='Evaluated').all()
     return render_template('results.html', results=evaluated_bookings)
+
+# View Bookings
 @app.route('/student/my_bookings')
 @login_required(role='student')
 def my_bookings():
-    # Fetch all bookings for the currently logged-in student
     bookings = Booking.query.filter_by(student_id=session['user_id']).all()
     return render_template('my_bookings.html', bookings=bookings)
 
-# --- EXAMINER ROUTES ---
+# --- EXAMINER ---
 
+# Examiner Dash
 @app.route('/examiner_dashboard')
 @login_required(role='examiner')
 def examiner_dashboard():
-    # We will query assigned exams and slots here later
     return render_template('examiner_dashboard.html')
+
+# Setup Slots
 @app.route('/examiner/manage_slots', methods=['GET', 'POST'])
 @login_required(role='examiner')
 def manage_slots():
@@ -402,94 +407,100 @@ def manage_slots():
         exam_id = request.form['exam_id']
         max_capacity = int(request.form['max_capacity'])
         
-        # Parse slot times
+        # Parse Dates
         fmt = '%Y-%m-%dT%H:%M'
         try:
             start_time = datetime.strptime(request.form['start_time'], fmt)
             end_time = datetime.strptime(request.form['end_time'], fmt)
         except ValueError:
-            flash("Error parsing dates.")
+            flash("Date error.")
             return redirect(url_for('manage_slots'))
             
-        exam = Examination.query.get(exam_id)
+        exam = db.session.get(Examination, exam_id)
         current_time = datetime.now()
         
-        # 1. Admin Window Validation: Check if the examiner is allowed to create slots right now
+        # Verify Window
         if not (exam.slot_creation_start <= current_time <= exam.slot_creation_end):
-            flash(f"Error: Slot creation for '{exam.name}' is currently closed. Allowed from {exam.slot_creation_start} to {exam.slot_creation_end}.")
+            flash("Creation closed.")
             return redirect(url_for('manage_slots'))
             
-        # 2. Chronological Validation: End time must be after start time
+        # Verify Order
         if start_time >= end_time:
-            flash("Error: End time must be after start time.")
+            flash("Time error.")
             return redirect(url_for('manage_slots'))
             
-        # 3. NEW: Prevent scheduling slots in the past
+        # Block Past
         if start_time < current_time:
-            flash("Error: Examination slot cannot be scheduled in the past.")
+            flash("Past date error.")
             return redirect(url_for('manage_slots'))
             
-        # 4. NEW: Ensure the slot happens AFTER the student booking window ends
+        # Block Overlap
         if start_time < exam.booking_end:
-            flash(f"Error: Slot must be scheduled after the student booking window ends ({exam.booking_end}).")
+            flash("Overlap error.")
             return redirect(url_for('manage_slots'))
             
+        # Save Slot
         new_slot = ExaminationSlot(
             examination_id=exam.id,
             examiner_id=session['user_id'],
             start_time=start_time,
             end_time=end_time,
             max_capacity=max_capacity,
-            available_seats=max_capacity # Seats initially equal max capacity
+            available_seats=max_capacity 
         )
         db.session.add(new_slot)
         db.session.commit()
         
-        flash("Examination slot created successfully.")
+        flash("Slot created.")
         return redirect(url_for('manage_slots'))
         
-    # GET request: fetch exams and the current examiner's slots
     exams = Examination.query.all()
     my_slots = ExaminationSlot.query.filter_by(examiner_id=session['user_id']).all()
     return render_template('manage_slots.html', exams=exams, my_slots=my_slots)
+
+# View Students
 @app.route('/examiner/booked_students')
 @login_required(role='examiner')
 def booked_students():
-    # Find all slots managed by this examiner
+    # Fetch Slots
     my_slots = ExaminationSlot.query.filter_by(examiner_id=session['user_id']).all()
     slot_ids = [slot.id for slot in my_slots]
     
-    # Fetch all bookings that belong to any of those slots
+    # Fetch Bookings
     bookings = Booking.query.filter(Booking.slot_id.in_(slot_ids)).all()
     return render_template('booked_students.html', bookings=bookings)
+
+# Evaluate
 @app.route('/examiner/evaluate/<int:booking_id>', methods=['GET', 'POST'])
 @login_required(role='examiner')
 def evaluate(booking_id):
-    booking = Booking.query.get_or_404(booking_id)
+    booking = db.get_or_404(Booking, booking_id)
     
-    # Security Check: Ensure this booking belongs to a slot managed by THIS examiner
+    # Security Check
     if booking.slot.examiner_id != session['user_id']:
-        flash("Unauthorized access: You do not manage this slot.")
+        flash("Access denied.")
         return redirect(url_for('booked_students'))
         
     if request.method == 'POST':
         marks = float(request.form['marks_obtained'])
         max_marks = booking.slot.examination.max_marks
         
-        # Validation: Marks cannot exceed the max marks defined by the Admin
+        # Verify Limits
         if marks < 0 or marks > max_marks:
-            flash(f"Error: Marks must be between 0 and {max_marks}.")
+            flash("Invalid marks.")
             return redirect(url_for('evaluate', booking_id=booking.id))
             
+        # Save Eval
         booking.marks_obtained = marks
         booking.feedback = request.form['feedback'].strip()
         booking.status = 'Evaluated'
         db.session.commit()
         
-        flash(f"Evaluation submitted for Student #{booking.student_id}.")
+        flash("Evaluation saved.")
         return redirect(url_for('booked_students'))
         
     return render_template('evaluate.html', booking=booking)
-# Run app
+
+# Run
 if __name__ == '__main__':
     app.run(debug=True)
